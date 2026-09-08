@@ -823,3 +823,66 @@ Wazuh Manager
 ```
 
 A failure at one stage does not necessarily mean that the preceding stages have also failed.
+
+
+---
+
+## 12. Verification and Validation
+
+Final validation was performed to confirm that the monitoring environment remained operational after the detection exercises and troubleshooting activities.
+
+### 12.1 Wazuh Platform Health
+
+The status of the three primary Wazuh services was checked:
+
+```bash
+systemctl is-active wazuh-indexer wazuh-manager wazuh-dashboard
+```
+
+All three services returned:
+
+```text
+active
+```
+
+This confirmed that the Wazuh Indexer, Manager, and Dashboard were operational at the conclusion of the lab.
+
+### 12.2 Windows Monitoring Services
+
+The Windows endpoint was checked to confirm that the Wazuh agent and Sysmon services remained operational.
+
+```powershell
+Get-Service WazuhSvc,Sysmon64 | Select-Object Name,Status
+```
+
+Both services returned a status of:
+
+```text
+Running
+```
+
+### 12.3 Detection Validation
+
+The completed scenarios demonstrated successful detection and investigation of:
+
+- Windows local account creation through Event ID 4720 and Wazuh Rule 60109.
+- PowerShell Operational and Event ID 4104 telemetry collection, including a Wazuh alert associated with PowerShell registry modification.
+- Failed Windows authentication through Event ID 4625 and Wazuh Rule 60122.
+- Correlation of the failed authentication with a subsequent successful Event ID 4624.
+
+Raw event inspection was also used where necessary to distinguish successful telemetry collection from SIEM alert generation.
+
+### 12.4 Final Environment State
+
+At the end of validation:
+
+- Wazuh core services were active.
+- The Windows Wazuh agent was running.
+- Sysmon remained installed and running locally.
+- Windows Security telemetry was successfully reaching Wazuh.
+- PowerShell Operational telemetry was successfully reaching Wazuh.
+- Controlled test accounts were removed.
+- Temporary raw event archiving was disabled.
+- The lab VMs were shut down cleanly.
+
+These checks provided a final verification that the environment remained stable after the monitoring and investigation exercises.
