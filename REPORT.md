@@ -886,3 +886,55 @@ At the end of validation:
 - The lab VMs were shut down cleanly.
 
 These checks provided a final verification that the environment remained stable after the monitoring and investigation exercises.
+
+
+---
+
+## 13. Cleanup and Environment Restoration
+
+Post-lab cleanup was performed after the detection scenarios and investigations were completed.
+
+### 13.1 Removal of Test Accounts
+
+The temporary Windows accounts created during the account-management detection exercises were removed:
+
+- `Soc-TestUser`
+- `SOC-TestUser2`
+
+The legitimate lab account `0P3RAT0R` was preserved.
+
+The local user list was reviewed afterward to verify that the temporary accounts were no longer present.
+
+### 13.2 Raw Event Archiving
+
+Wazuh raw JSON event archiving had been temporarily enabled during troubleshooting to determine whether Windows events were being collected independently of alert generation.
+
+After the required evidence had been obtained, the configuration was restored to:
+
+```xml
+<logall_json>no</logall_json>
+```
+
+The Wazuh Manager was restarted and confirmed to be active after the configuration change.
+
+### 13.3 Service Verification
+
+Before shutdown, the Wazuh platform was checked and the following services were confirmed active:
+
+- Wazuh Indexer
+- Wazuh Manager
+- Wazuh Dashboard
+
+On Windows-Target, both the Wazuh agent and Sysmon services were confirmed to be running.
+
+### 13.4 Controlled Shutdown
+
+The virtual machines were shut down cleanly after final validation.
+
+The shutdown order used was:
+
+1. Windows-Target
+2. Kali Linux
+3. Wazuh Manager
+
+This left the SOC lab in a clean and recoverable state for future use.
