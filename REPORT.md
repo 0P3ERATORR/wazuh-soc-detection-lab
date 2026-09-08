@@ -1093,3 +1093,92 @@ The strongest screenshots for quickly demonstrating the project's SOC capabiliti
 Additional screenshots provide supporting technical evidence and troubleshooting context in the full project documentation.
 
 > **Security note:** Credentials, authentication tokens, API secrets, and other sensitive values are excluded or redacted from published evidence.
+
+
+---
+
+## 17. Interview Talking Points
+
+### How would you describe this project?
+
+I built an isolated SOC/SIEM lab using Wazuh and a Windows 11 endpoint. I configured Windows Security and PowerShell telemetry, installed Sysmon, generated controlled security events, validated Wazuh detections, mapped alerts to MITRE ATT&CK, and performed an end-to-end investigation of a failed authentication alert.
+
+The project also required troubleshooting the SIEM infrastructure, including an Indexer out-of-memory failure, service startup timeouts, Filebeat-to-Indexer connectivity, API availability, and Windows EventChannel collection.
+
+### How did you investigate the failed-login alert?
+
+I started with Windows Security Event ID 4625 and identified the targeted account, logon type, source address, failure reason, status, and SubStatus.
+
+The SubStatus `0xC000006A` indicated that the account was valid but the password was incorrect.
+
+I then searched surrounding authentication activity and found Event ID 4624 for the same account approximately 12 seconds later. Both events were interactive Logon Type 2 events.
+
+Based on the local source, incorrect-password status, lack of repeated failures around the event, and subsequent successful login, I classified the activity as likely benign and consistent with a mistyped password.
+
+### What Windows Event IDs did you work with?
+
+Key Event IDs included:
+
+- **4624** — Successful logon
+- **4625** — Failed logon
+- **4672** — Special privileges assigned to a new logon
+- **4688** — New process created
+- **4720** — User account created
+- **4722** — User account enabled
+- **4104** — PowerShell Script Block Logging
+
+### What is the difference between a raw event and an alert?
+
+A raw event is telemetry collected from the endpoint. An alert is generated when the SIEM evaluates collected telemetry against detection logic and a rule matches.
+
+During the lab, raw Wazuh archives were used to verify whether events had been collected even when they were not visible as alerts in Threat Hunting.
+
+### What would you check if an event occurred on the endpoint but did not appear in the SIEM?
+
+I would troubleshoot the monitoring pipeline in stages:
+
+```text
+Endpoint event generation
+        ↓
+Local event log
+        ↓
+Agent collection
+        ↓
+Manager processing
+        ↓
+Detection rule
+        ↓
+Alert generation
+        ↓
+Forwarding / Filebeat
+        ↓
+Indexer
+        ↓
+Dashboard
+```
+
+This approach helped identify a real issue in the lab where the Wazuh Manager generated an alert successfully, but Filebeat temporarily could not send it to the Indexer.
+
+### What did you learn about MITRE ATT&CK?
+
+MITRE ATT&CK mappings are useful for describing behaviors associated with adversary techniques, but a mapping does not prove malicious activity.
+
+For example, Wazuh mapped a PowerShell registry modification to T1059.001 and T1112, but the command was an authorized configuration change performed during the lab.
+
+Similarly, Wazuh Rule 60122 mapped the failed login to T1531, but event correlation showed that the controlled authentication event was likely benign.
+
+### What was the biggest technical problem you solved?
+
+One of the main infrastructure problems was the Wazuh Indexer being terminated by the Linux OOM killer.
+
+I verified the failure using kernel logs and found that the VM had no swap configured. I created a persistent 4 GiB swap file and verified Indexer recovery.
+
+I also encountered an Indexer startup timeout on the resource-constrained host and increased the systemd startup timeout from three minutes to ten minutes.
+
+These issues taught me to investigate the underlying SIEM services instead of assuming that a Dashboard error originates in the Dashboard itself.
+
+### What would you improve in a future version of the lab?
+
+Future improvements could include additional endpoints, custom Wazuh detection rules, centralized Sysmon ingestion after resolving the EventChannel subscription issue, Active Directory telemetry, and additional authentication and endpoint detection scenarios.
+
+The next stage would focus on expanding from individual endpoint monitoring into a more realistic enterprise-style SOC environment.
