@@ -90,3 +90,26 @@ Supporting screenshots from the lab are available in the [`screenshots`](screens
 The evidence includes endpoint integration, Windows telemetry collection, account-creation detection, PowerShell telemetry, failed-authentication detection, MITRE ATT&CK mappings, and SIEM pipeline troubleshooting.
 
 > **Security Notice:** Credentials, passwords, API tokens, and other sensitive authentication information are excluded or redacted from all published documentation and screenshots.
+
+
+## Featured Evidence
+
+### Windows Endpoint Connected to Wazuh
+
+The Windows 11 endpoint successfully registered with the Wazuh Manager and remained active during the monitoring exercises.
+
+![Windows endpoint active in Wazuh](screenshots/01-wazuh-windows-agent-active.png)
+
+### Account Creation Detection — MITRE ATT&CK T1098
+
+Windows account-management activity triggered Wazuh Rule 60109 (Level 8) and was mapped to **T1098 — Account Manipulation** under the Persistence tactic.
+
+![Wazuh account creation detection mapped to MITRE T1098](screenshots/11-account-creation-detection-mitre-t1098.png)
+
+### Failed Authentication Detection — Wazuh Rule 60122
+
+The controlled failed authentication triggered Wazuh Rule 60122 (Level 5). Wazuh's built-in ATT&CK mapping associated the alert with **T1531 — Account Access Removal**.
+
+![Wazuh failed authentication detection with MITRE T1531 mapping](screenshots/16-failed-login-detection-mitre-t1531.png)
+
+> **Analyst note:** The T1531 mapping above is Wazuh's built-in rule mapping. Event correlation showed that the controlled failed login was likely benign and consistent with a mistyped password followed by a successful login.
