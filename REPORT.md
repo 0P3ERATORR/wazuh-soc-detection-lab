@@ -938,3 +938,60 @@ The shutdown order used was:
 3. Wazuh Manager
 
 This left the SOC lab in a clean and recoverable state for future use.
+
+
+---
+
+## 14. Key Findings and Lessons Learned
+
+This project demonstrated that deploying a SIEM is only the beginning of an effective monitoring workflow. Reliable detection requires visibility and validation across the entire telemetry pipeline.
+
+### Key Findings
+
+- Windows Security auditing provided reliable telemetry for account-management and authentication monitoring.
+- Windows Event ID 4720 successfully produced a Wazuh account-creation alert through Rule 60109.
+- Windows Event ID 4625 successfully produced a failed-authentication alert through Rule 60122.
+- PowerShell Operational and Script Block telemetry could be centrally collected and inspected through Wazuh.
+- Raw event collection and SIEM alert generation are separate stages and should be validated independently.
+- An alert can be generated successfully by the Wazuh Manager while remaining temporarily unavailable in Threat Hunting if downstream indexing is interrupted.
+- MITRE ATT&CK mappings provide useful context but should not replace analyst investigation.
+- Correlation with surrounding events can significantly change the interpretation of an alert.
+
+### Lessons Learned
+
+One of the most important lessons from the lab was to troubleshoot security monitoring as a pipeline rather than treating the Dashboard as the entire SIEM.
+
+The effective troubleshooting model became:
+
+```text
+Event Generation
+      |
+      v
+Endpoint Logging
+      |
+      v
+Agent Collection
+      |
+      v
+Manager Processing
+      |
+      v
+Rule / Alert Generation
+      |
+      v
+Forwarding
+      |
+      v
+Indexing
+      |
+      v
+Dashboard Search
+```
+
+When an event was missing from the Dashboard, each stage could therefore be tested independently.
+
+The failed-authentication investigation also reinforced the importance of evidence-based analysis. Event ID 4625 initially represented a failed authentication alert, but examination of the status codes, source, logon type, event frequency, and subsequent Event ID 4624 provided enough context to classify the controlled event as likely benign.
+
+The project also provided practical experience troubleshooting infrastructure problems that can affect security monitoring, including memory exhaustion, service startup timing, API availability, network connectivity, EventChannel subscriptions, and SIEM indexing delays.
+
+Overall, the lab strengthened both technical SIEM troubleshooting skills and the analytical process required to determine what a security alert actually means.
