@@ -45,3 +45,38 @@ The primary objectives of this project were to:
 - Troubleshoot failures across the endpoint, Wazuh Manager, Filebeat, Indexer, and Dashboard pipeline.
 - Document remediation and verify the environment after changes.
 - Perform post-lab cleanup and leave the environment in a stable state.
+
+---
+
+## 3. Lab Architecture and Network Design
+
+The lab was built in VMware Workstation 17 Player using an isolated Host-only virtual network.
+
+### Network
+
+| Component | IP Address | Role |
+|---|---|---|
+| Kali Linux | `192.168.32.128` | Analyst workstation and Wazuh Dashboard access |
+| Wazuh Manager | `192.168.32.130` | SIEM/XDR manager, indexer, dashboard, and alert processing |
+| Windows-Target | `192.168.32.131` | Monitored Windows endpoint and controlled event-generation system |
+
+**Host-only subnet:** `192.168.32.0/24`
+
+### Architecture
+
+```text
+                     VMware Host
+                         |
+                Host-only Network
+                  192.168.32.0/24
+                         |
+          +--------------+--------------+
+          |                             |
+     Kali Linux                   Wazuh Manager
+   192.168.32.128                192.168.32.130
+   Analyst System                 SIEM / Indexer
+                                        |
+                                  Wazuh Agent
+                                        |
+                                 Windows-Target
+                                 192.168.32.131
