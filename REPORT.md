@@ -470,3 +470,150 @@ This demonstrated an important distinction between:
 The event was then investigated further by correlating it with subsequent authentication activity.
 
 > **MITRE ATT&CK note:** T1531 was the built-in mapping assigned by Wazuh Rule 60122. The presence of this mapping was not treated as proof that Account Access Removal had occurred. The final analyst disposition was based on the underlying Windows event fields and correlated activity.
+
+
+---
+
+## 9. SOC Alert Investigation — Failed Authentication
+
+After validating the failed-authentication detection, the alert was investigated as a SOC analyst would investigate an authentication event in a monitored environment.
+
+The objective was not to assume that the failed login was malicious, but to use the available evidence to determine what occurred and whether escalation was warranted.
+
+### Investigation Question 1 — Which account was targeted?
+
+The following Windows event field was examined:
+
+`data.win.eventdata.targetUserName`
+
+**Finding:**
+
+`0P3RAT0R`
+
+This identified the Windows account involved in the failed authentication attempt.
+
+### Investigation Question 2 — What type of logon was attempted?
+
+The following field was examined:
+
+`data.win.eventdata.logonType`
+
+**Finding:**
+
+`2`
+
+Windows Logon Type 2 represents an interactive logon, indicating that the authentication attempt occurred through an interactive Windows session rather than a remote network logon.
+
+### Investigation Question 3 — Where did the attempt originate?
+
+The source address recorded in the event was examined:
+
+`data.win.eventdata.ipAddress`
+
+**Finding:**
+
+`127.0.0.1`
+
+The localhost address supported the conclusion that the authentication attempt originated from the monitored Windows endpoint itself rather than from a remote system.
+
+### Investigation Question 4 — Why did authentication fail?
+
+The failure-reason field was examined:
+
+`data.win.eventdata.failureReason`
+
+**Finding:**
+
+`%%2313`
+
+The raw value was retained as observed in the Wazuh event data and considered together with the Windows authentication status codes examined next.
+
+### Investigation Question 5 — What was the authentication status code?
+
+The following field was examined:
+
+`data.win.eventdata.status`
+
+**Finding:**
+
+`0xC000006D`
+
+This status indicates that the logon attempt failed because the supplied credentials were invalid.
+
+### Investigation Question 6 — What did the SubStatus reveal?
+
+The following field was examined:
+
+`data.win.eventdata.subStatus`
+
+**Finding:**
+
+`0xC000006A`
+
+This provided additional context indicating that the username was valid but the password supplied was incorrect.
+
+### Investigation Question 7 — Was the activity isolated or repeated?
+
+Wazuh Rule 60122 was reviewed to identify other failed-authentication alerts.
+
+Three relevant hits were observed:
+
+- September 7, 2026 — controlled failed-authentication event
+- September 6, 2026 — two earlier failed-authentication events approximately three seconds apart
+
+The two earlier events were noteworthy, but their presence alone was not sufficient to classify the activity as brute force or password spraying.
+
+Around the September 7 controlled event, no cluster of repeated failures was identified.
+
+### Investigation Question 8 — Was there a successful login afterward?
+
+The investigation was expanded beyond failed-authentication alerts to search for Windows Security Event ID 4624 — Successful Logon.
+
+A successful authentication for the same account, `0P3RAT0R`, was identified approximately 12 seconds after the failed Event ID 4625.
+
+This correlation provided important context for determining the nature of the failed authentication.
+
+### Investigation Question 9 — Was the successful login also interactive?
+
+The Event ID 4624 logon type was examined.
+
+**Finding:**
+
+`2`
+
+The successful authentication was also an interactive logon.
+
+The sequence therefore showed:
+
+```text
+Failed Interactive Logon — Event 4625
+             |
+             | ~12 seconds
+             v
+Successful Interactive Logon — Event 4624
+             |
+             v
+Same account: 0P3RAT0R
+```
+
+### Investigation Question 10 — What was the analyst disposition?
+
+Based on the available evidence, the activity was assessed as **likely benign / expected user activity**.
+
+The investigation established that:
+
+- A single interactive authentication failure occurred for `0P3RAT0R`.
+- The SubStatus `0xC000006A` indicated an incorrect password for a valid account.
+- The event originated from localhost.
+- A successful interactive logon for the same account followed approximately 12 seconds later.
+- No burst of repeated failures was identified around the controlled September 7 event.
+
+The sequence was therefore consistent with a user entering an incorrect password and correcting it on the next attempt rather than with brute-force or password-spraying activity.
+
+In a production environment, additional escalation would be appropriate if the event formed part of repeated authentication failures, involved an unusual source, targeted a privileged account, originated from an unexpected endpoint, or correlated with other suspicious activity.
+
+### Investigation Conclusion
+
+This investigation demonstrated why SOC analysis requires more than reading an alert description or MITRE ATT&CK mapping.
+
+By examining the underlying event fields and correlating Event ID 4625 with the subsequent Event ID 4624, the alert could be placed into context and assigned an evidence-based disposition rather than automatically being classified as malicious.
