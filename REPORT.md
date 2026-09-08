@@ -617,3 +617,33 @@ In a production environment, additional escalation would be appropriate if the e
 This investigation demonstrated why SOC analysis requires more than reading an alert description or MITRE ATT&CK mapping.
 
 By examining the underlying event fields and correlating Event ID 4625 with the subsequent Event ID 4624, the alert could be placed into context and assigned an evidence-based disposition rather than automatically being classified as malicious.
+
+
+---
+
+## 10. MITRE ATT&CK Mapping
+
+MITRE ATT&CK mappings provided by Wazuh were reviewed during the detection scenarios to understand how observed activity related to recognized adversary techniques.
+
+The mappings were treated as contextual information rather than automatic confirmation of malicious activity.
+
+| Detection / Activity | Wazuh Rule | MITRE ID | Technique | Tactic |
+|---|---:|---|---|---|
+| Local account creation | 60109 | T1098 | Account Manipulation | Persistence |
+| PowerShell execution | Built-in PowerShell detection | T1059.001 | PowerShell | Execution |
+| Registry modification through PowerShell | Built-in PowerShell detection | T1112 | Modify Registry | Defense Evasion |
+| Failed authentication | 60122 | T1531 | Account Access Removal | Impact |
+
+### Analyst Interpretation
+
+The account-creation scenario provided a clear example of ATT&CK contextualization. Windows Event ID 4720 triggered Wazuh Rule 60109 and was mapped to **T1098 — Account Manipulation** under the Persistence tactic.
+
+The PowerShell scenario demonstrated that ATT&CK-mapped behavior is not automatically malicious. The registry modification was performed intentionally to enable Script Block Logging, yet the behavior still matched techniques associated with PowerShell execution and registry modification.
+
+Similarly, Wazuh Rule 60122 mapped the failed authentication event to **T1531 — Account Access Removal**. This was recorded as Wazuh's built-in mapping, but the investigation did not conclude that Account Access Removal had occurred.
+
+Correlation of the failed Event ID 4625 with a successful Event ID 4624 approximately 12 seconds later supported a benign mistyped-password explanation.
+
+This distinction is important in SOC operations:
+
+**MITRE ATT&CK describes adversary behaviors and provides useful detection context, but analyst investigation determines whether the observed activity is actually suspicious or malicious.**
