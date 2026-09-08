@@ -647,3 +647,179 @@ Correlation of the failed Event ID 4625 with a successful Event ID 4624 approxim
 This distinction is important in SOC operations:
 
 **MITRE ATT&CK describes adversary behaviors and provides useful detection context, but analyst investigation determines whether the observed activity is actually suspicious or malicious.**
+
+
+---
+
+## 11. Troubleshooting and Root-Cause Analysis
+
+Several technical issues occurred during the project. Rather than removing these from the final documentation, they were retained because they demonstrate troubleshooting across multiple layers of the SIEM pipeline.
+
+### 11.1 Wazuh Indexer Out-of-Memory Failure
+
+**Symptom:**  
+The Wazuh Dashboard became unavailable and initially appeared to have an authentication problem.
+
+**Investigation:**  
+Service status, Indexer logs, memory utilization, JVM configuration, disk capacity, and Linux kernel logs were examined.
+
+Kernel logs confirmed that the Linux OOM killer had terminated the OpenSearch Java process.
+
+The investigation identified:
+
+- Approximately 5.6 GiB usable VM memory
+- Approximately 2.9 GB OpenSearch JVM heap
+- No configured swap space
+- Sufficient disk capacity
+
+**Root cause:**  
+The VM experienced memory pressure while running the Wazuh stack. OpenSearch also requires memory outside its configured JVM heap, and other Wazuh and operating-system processes were competing for the available physical memory. With no swap configured, the kernel eventually invoked the OOM killer.
+
+**Remediation:**  
+A persistent 4 GiB swap file was configured.
+
+**Verification:**  
+Indexer availability was subsequently confirmed through service status, TCP port 9200, authenticated Indexer access, and successful Dashboard login.
+
+### 11.2 Wazuh Indexer Startup Timeout
+
+**Symptom:**  
+On some VM startups, the Indexer remained in an initializing state long enough for systemd to terminate it.
+
+**Investigation:**  
+The Indexer systemd startup timeout was found to be three minutes.
+
+**Root cause:**  
+On the resource-constrained lab host, OpenSearch could occasionally require longer than the configured timeout to initialize.
+
+**Remediation:**  
+A persistent systemd override increased:
+
+```text
+TimeoutStartSec=3min
+```
+
+to:
+
+```text
+TimeoutStartSec=10min
+```
+
+**Verification:**  
+On subsequent startup, the Indexer was allowed additional initialization time and successfully reached an active state.
+
+### 11.3 Wazuh Manager and API Availability
+
+**Symptom:**  
+The Dashboard reported API connectivity problems, including messages indicating that no API was available.
+
+**Investigation:**  
+The Wazuh Manager service, API listener on TCP port 55000, Dashboard API configuration, and API authentication were checked.
+
+The API listener was reachable, and authenticated API access was successfully validated.
+
+**Remediation:**  
+The affected Wazuh services were restarted after confirming the Indexer and Manager dependencies were available.
+
+**Verification:**  
+Dashboard access and API communication were restored.
+
+### 11.4 Kali Host-Only Network Connectivity
+
+**Symptom:**  
+Kali Linux temporarily lost connectivity to the Wazuh Dashboard.
+
+**Investigation:**  
+The Kali network interface was found to be down and initially lacked its expected IPv4 address.
+
+**Remediation:**  
+The interface was brought back online and the lab address `192.168.32.128/24` was restored.
+
+**Verification:**  
+Kali subsequently regained access to the Host-only lab network and Wazuh Dashboard.
+
+### 11.5 Sysmon EventChannel Subscription Issue
+
+**Symptom:**  
+Sysmon was installed successfully and generated events locally, but the Wazuh Windows agent returned:
+
+```text
+ERROR: Could not EvtSubscribe() for (Microsoft-Windows-Sysmon/Operational) which returned (15007)
+```
+
+**Investigation:**  
+The Sysmon Operational channel was verified to exist, was enabled, and contained valid events. Direct queries against the channel succeeded. The Wazuh agent service was also confirmed to be running under LocalSystem.
+
+**Finding:**  
+Despite the valid local channel, the Wazuh agent continued to return EventChannel subscription error 15007.
+
+**Disposition:**  
+The issue was documented as an unresolved Wazuh/Sysmon EventChannel subscription or compatibility issue. Successful central Sysmon ingestion was not claimed in the project results.
+
+### 11.6 Raw Event Collection vs Alert Generation
+
+**Symptom:**  
+Some Windows events were known to exist on the endpoint but were not immediately visible as alerts in Threat Hunting.
+
+**Investigation:**  
+Wazuh raw event archiving was temporarily enabled using `logall_json` so that collected events could be inspected independently of SIEM rule matches.
+
+This allowed the monitoring pipeline to be separated into two questions:
+
+1. Did Wazuh collect the event?
+2. Did a Wazuh rule generate an alert from the event?
+
+**Finding:**  
+Raw archive inspection proved that telemetry could be successfully collected even when a corresponding Threat Hunting alert was absent.
+
+**Cleanup:**  
+After validation was complete, `logall_json` was returned to `no` to avoid unnecessary long-term raw event storage.
+
+### 11.7 Filebeat-to-Indexer Connectivity and Delayed Alert Visibility
+
+**Symptom:**  
+The controlled Event ID 4625 was present in the Wazuh raw archives and `alerts.json`, but the new alert initially did not appear in Threat Hunting.
+
+**Investigation:**  
+Filebeat output connectivity was tested and its logs were examined.
+
+The logs showed repeated connection failures to:
+
+```text
+https://127.0.0.1:9200
+```
+
+followed later by successful reconnection to the Wazuh Indexer.
+
+**Root cause:**  
+The Wazuh Manager had successfully generated the alert, but Filebeat temporarily could not forward it to the Indexer. This delayed its availability in Dashboard searches.
+
+**Verification:**  
+After Filebeat re-established its Indexer connection, the Event ID 4625 alert became searchable in Threat Hunting.
+
+This troubleshooting exercise demonstrated the importance of understanding the complete SIEM data path:
+
+```text
+Endpoint
+   |
+   v
+Wazuh Agent
+   |
+   v
+Wazuh Manager
+   |
+   +----> Raw Events
+   |
+   +----> Alert Generation
+              |
+              v
+           Filebeat
+              |
+              v
+        Wazuh Indexer
+              |
+              v
+       Dashboard / Search
+```
+
+A failure at one stage does not necessarily mean that the preceding stages have also failed.
