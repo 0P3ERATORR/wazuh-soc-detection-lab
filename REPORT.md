@@ -317,3 +317,59 @@ Events observed during the project included:
 Windows Security events were successfully collected by the Wazuh agent and processed by the Wazuh Manager.
 
 This telemetry became the foundation for the account-creation detection and the failed-authentication investigation performed later in the project.
+
+
+---
+
+## 8. Detection Engineering and Controlled Scenarios
+
+Controlled activity was generated on Windows-Target to validate the monitoring pipeline and examine how endpoint events progressed from Windows telemetry to Wazuh detections.
+
+The scenarios were intentionally non-destructive and focused on common activity that a SOC analyst may encounter during monitoring.
+
+### 8.1 Detection 1 — Local Windows Account Creation
+
+A controlled local user account was created on Windows-Target to generate Windows account-management telemetry.
+
+Windows recorded the activity as:
+
+- **Event ID:** 4720
+- **Event:** A user account was created
+- **Target account:** `SOC-TestUser2`
+
+The event was successfully collected by the Wazuh agent and confirmed in the Wazuh raw event archives.
+
+Wazuh subsequently generated an alert with:
+
+- **Wazuh Rule ID:** 60109
+- **Rule level:** 8
+- **Description:** User account enabled or created
+- **MITRE ATT&CK ID:** T1098
+- **Technique:** Account Manipulation
+- **Tactic:** Persistence
+
+The detection chain was therefore validated as:
+
+```text
+Controlled Account Creation
+        |
+        v
+Windows Security Event 4720
+        |
+        v
+Wazuh Agent Collection
+        |
+        v
+Wazuh Rule 60109
+        |
+        v
+Level 8 Alert
+        |
+        v
+MITRE ATT&CK T1098
+Account Manipulation
+```
+
+This scenario demonstrated the distinction between simply collecting a Windows event and generating a SIEM alert from that event.
+
+The test account was removed during post-lab cleanup after the detection and supporting evidence had been validated.
