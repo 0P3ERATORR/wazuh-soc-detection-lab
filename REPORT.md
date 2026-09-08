@@ -406,3 +406,67 @@ It is important to distinguish the SIEM detection from analyst interpretation. I
 This scenario demonstrated that a security tool may correctly detect behavior associated with ATT&CK techniques even when the underlying activity is authorized.
 
 The analyst's responsibility is therefore not simply to treat a MITRE-mapped alert as malicious, but to establish context and determine whether the activity is expected or suspicious.
+
+
+### 8.3 Detection 3 — Failed Windows Authentication
+
+A controlled failed authentication attempt was generated on Windows-Target by entering an incorrect password during an interactive Windows logon.
+
+Windows generated:
+
+- **Event ID:** 4625
+- **Event:** An account failed to log on
+- **Target account:** `0P3RAT0R`
+- **Logon type:** 2 — Interactive logon
+
+The event was successfully collected by the Wazuh agent and identified in the Wazuh raw event archives.
+
+Wazuh generated an alert with the following details:
+
+- **Wazuh Rule ID:** 60122
+- **Rule level:** 5
+- **Description:** Logon Failure - Unknown user or bad password
+- **Rule group:** `authentication_failed`
+- **MITRE ATT&CK ID:** T1531
+- **Technique:** Account Access Removal
+- **Tactic:** Impact
+
+The detection chain was validated as:
+
+```text
+Controlled Failed Logon
+        |
+        v
+Windows Security Event 4625
+        |
+        v
+Wazuh Agent Collection
+        |
+        v
+Wazuh Rule 60122
+        |
+        v
+Level 5 Authentication Alert
+```
+
+### Alert Indexing Delay
+
+During validation, the fresh Event ID 4625 was present in both the Wazuh raw archives and `alerts.json`, but initially did not appear in Threat Hunting.
+
+Investigation of the alert pipeline identified repeated Filebeat connection failures to the Wazuh Indexer on TCP port 9200.
+
+The Filebeat log showed connection-refused messages followed later by successful reconnection to the Indexer.
+
+After connectivity was restored, the alert became searchable in the Wazuh Dashboard.
+
+This demonstrated an important distinction between:
+
+1. Event generation on the endpoint
+2. Event collection by the Wazuh agent
+3. Alert generation by the Wazuh Manager
+4. Alert forwarding by Filebeat
+5. Indexing and Dashboard search visibility
+
+The event was then investigated further by correlating it with subsequent authentication activity.
+
+> **MITRE ATT&CK note:** T1531 was the built-in mapping assigned by Wazuh Rule 60122. The presence of this mapping was not treated as proof that Account Access Removal had occurred. The final analyst disposition was based on the underlying Windows event fields and correlated activity.
