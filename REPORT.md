@@ -258,3 +258,62 @@ Indexer / Dashboard
 The active-agent status in the Wazuh Dashboard was retained as evidence of successful endpoint integration.
 
 This established the telemetry pipeline required for the subsequent Windows Security monitoring, PowerShell logging, controlled detection scenarios, and SOC investigations.
+
+
+---
+
+## 7. Sysmon and Windows Telemetry Configuration
+
+### 7.1 Sysmon Installation
+
+Sysmon 15.21 from Microsoft Sysinternals was installed on Windows-Target to provide enhanced endpoint telemetry.
+
+After installation, the Sysmon service and driver were confirmed to be running.
+
+Local event generation was validated through the Windows event channel:
+
+`Microsoft-Windows-Sysmon/Operational`
+
+Sysmon events, including process creation activity, were successfully observed locally. This confirmed that Sysmon itself was installed and functioning correctly on the Windows endpoint.
+
+### 7.2 Wazuh Sysmon Collection Configuration
+
+The Windows Wazuh agent configuration was updated to collect the Sysmon Operational event channel:
+
+```xml
+<localfile>
+  <location>Microsoft-Windows-Sysmon/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+```
+
+After restarting the Wazuh agent, the agent reported the following EventChannel subscription error:
+
+```text
+ERROR: Could not EvtSubscribe() for (Microsoft-Windows-Sysmon/Operational) which returned (15007)
+```
+
+Windows error `15007` corresponds to an EventChannel-not-found condition from the subscription attempt.
+
+Further validation showed that the Sysmon channel did exist, was enabled, and contained events. The channel could be queried successfully using Windows Event Log utilities.
+
+The Wazuh service was also confirmed to be running under the LocalSystem account.
+
+Because local Sysmon event generation was verified while the Wazuh agent continued to return the subscription error, the issue was documented as an unresolved EventChannel subscription/compatibility issue rather than incorrectly reporting successful central Sysmon ingestion.
+
+### 7.3 Windows Security Telemetry
+
+Windows Security auditing provided the primary telemetry used for the successful detection scenarios.
+
+Events observed during the project included:
+
+- Event ID 4624 — Successful logon
+- Event ID 4625 — Failed logon
+- Event ID 4672 — Special privileges assigned to a new logon
+- Event ID 4688 — New process created
+- Event ID 4720 — User account created
+- Event ID 4722 — User account enabled
+
+Windows Security events were successfully collected by the Wazuh agent and processed by the Wazuh Manager.
+
+This telemetry became the foundation for the account-creation detection and the failed-authentication investigation performed later in the project.
