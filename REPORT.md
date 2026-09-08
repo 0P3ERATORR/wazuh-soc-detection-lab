@@ -373,3 +373,36 @@ Account Manipulation
 This scenario demonstrated the distinction between simply collecting a Windows event and generating a SIEM alert from that event.
 
 The test account was removed during post-lab cleanup after the detection and supporting evidence had been validated.
+
+
+### 8.2 Detection 2 — PowerShell and Registry Activity
+
+PowerShell Operational logging was configured as an additional telemetry source on Windows-Target.
+
+The Wazuh agent configuration was updated to collect:
+
+`Microsoft-Windows-PowerShell/Operational`
+
+After restarting the agent, PowerShell Operational events were successfully observed in the Wazuh raw event archives.
+
+### Script Block Logging
+
+PowerShell Script Block Logging was enabled through the Windows registry to increase visibility into executed PowerShell commands.
+
+A controlled PowerShell command was then executed, and Windows Event ID 4104 was successfully generated locally.
+
+The corresponding Event ID 4104 telemetry was also identified in the Wazuh raw archives, confirming successful central collection of PowerShell Script Block events.
+
+During this configuration activity, Wazuh generated an alert for the PowerShell command that modified the registry to enable Script Block Logging.
+
+The alert included Wazuh's built-in MITRE ATT&CK mappings:
+
+- **T1059.001 — PowerShell**
+- **T1112 — Modify Registry**
+- **Tactics observed:** Execution and Defense Evasion
+
+It is important to distinguish the SIEM detection from analyst interpretation. In this case, the registry modification was intentionally performed as part of the lab configuration and was therefore benign.
+
+This scenario demonstrated that a security tool may correctly detect behavior associated with ATT&CK techniques even when the underlying activity is authorized.
+
+The analyst's responsibility is therefore not simply to treat a MITRE-mapped alert as malicious, but to establish context and determine whether the activity is expected or suspicious.
