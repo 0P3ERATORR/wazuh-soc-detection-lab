@@ -1060,3 +1060,36 @@ This project provided hands-on experience across SOC monitoring, SIEM administra
 - Detection validation
 - Remediation and verification documentation
 - Git-based project documentation and version history
+
+
+---
+
+## 16. Screenshot and Evidence Index
+
+Screenshots were captured throughout the project to preserve evidence of deployment, telemetry generation, detection, investigation, and troubleshooting.
+
+| Screenshot | Evidence |
+|---|---|
+| `01-wazuh-windows-agent-active.png` | Windows-Target successfully registered and active in Wazuh |
+| `02-sysmon-installation-success.png` | Successful Sysmon installation on Windows-Target |
+| `03-sysmon-event-generation.png` | Local Sysmon event generation verified |
+| `09-wazuh-raw-windows-events-archives.png` | Windows telemetry present in Wazuh raw event archives |
+| `10-wazuh-event-4720-account-creation-detected.png` | Event ID 4720 account creation detected by Wazuh |
+| `11-account-creation-detection-mitre-t1098.png` | Account-creation alert with MITRE ATT&CK T1098 mapping |
+| `12-wazuh-powershell-4104-ingestion.png` | PowerShell Event ID 4104 telemetry collected by Wazuh |
+| `13-failed-login-4625-wazuh-detection.png` | Failed authentication Event ID 4625 present in Wazuh |
+| `14-wazuh-4625-rule-60122-alert-generated.png` | Wazuh Rule 60122 alert generated for failed authentication |
+| `15-filebeat-indexer-connection-recovery.png` | Filebeat-to-Indexer connection failure and subsequent recovery |
+| `16-failed-login-detection-mitre-t1531.png` | Failed-authentication alert and Wazuh's built-in MITRE T1531 mapping |
+
+### Primary Portfolio Evidence
+
+The strongest screenshots for quickly demonstrating the project's SOC capabilities are:
+
+- `01-wazuh-windows-agent-active.png` — endpoint integration
+- `11-account-creation-detection-mitre-t1098.png` — account-creation detection and ATT&CK mapping
+- `16-failed-login-detection-mitre-t1531.png` — authentication detection and ATT&CK context
+
+Additional screenshots provide supporting technical evidence and troubleshooting context in the full project documentation.
+
+> **Security note:** Credentials, authentication tokens, API secrets, and other sensitive values are excluded or redacted from published evidence.
