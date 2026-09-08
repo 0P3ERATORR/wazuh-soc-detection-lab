@@ -80,3 +80,36 @@ The lab was built in VMware Workstation 17 Player using an isolated Host-only vi
                                         |
                                  Windows-Target
                                  192.168.32.131
+
+
+---
+
+## 4. Tools and Technologies
+
+| Technology | Purpose |
+|---|---|
+| VMware Workstation 17 Player | Virtualization platform used to host the isolated SOC lab |
+| Wazuh 4.14.7 | SIEM/XDR platform used for log collection, rule-based detection, alerting, and security monitoring |
+| Wazuh Indexer | Stored and indexed security alert data for searching and analysis |
+| Wazuh Dashboard | Used to perform Threat Hunting, review alerts, inspect event fields, and analyze MITRE ATT&CK mappings |
+| Wazuh Agent 4.14.7 | Collected telemetry from the Windows endpoint and forwarded it to the Wazuh Manager |
+| Windows 11 Pro | Monitored endpoint used to generate controlled security events |
+| Windows Security Event Log | Primary telemetry source for authentication and account-management activity |
+| Sysmon 15.21 | Installed to provide enhanced Windows endpoint telemetry and process-level visibility |
+| PowerShell Operational Logging | Provided PowerShell execution telemetry |
+| PowerShell Script Block Logging | Enabled additional visibility into executed PowerShell script blocks, including Event ID 4104 |
+| Kali Linux | Analyst workstation used to access the Wazuh Dashboard and investigate alerts |
+| MITRE ATT&CK | Framework used to contextualize Wazuh detection mappings |
+| Filebeat | Forwarded Wazuh alert data to the Wazuh Indexer |
+
+### Key Windows Event IDs Used
+
+| Event ID | Meaning | Use in Lab |
+|---|---|---|
+| 4624 | Successful logon | Correlated with a preceding failed authentication |
+| 4625 | Failed logon | Primary event for the failed-authentication detection and SOC investigation |
+| 4672 | Special privileges assigned to a new logon | Observed during Windows Security telemetry analysis |
+| 4688 | New process created | Verified locally as part of Windows process auditing |
+| 4720 | User account created | Primary event for the account-creation detection |
+| 4722 | User account enabled | Observed while investigating account-management activity |
+| 4104 | PowerShell Script Block Logging | Used to validate PowerShell telemetry collection |
