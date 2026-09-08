@@ -113,3 +113,97 @@ The lab was built in VMware Workstation 17 Player using an isolated Host-only vi
 | 4720 | User account created | Primary event for the account-creation detection |
 | 4722 | User account enabled | Observed while investigating account-management activity |
 | 4104 | PowerShell Script Block Logging | Used to validate PowerShell telemetry collection |
+
+
+---
+
+## 5. Wazuh Deployment and Platform Stabilization
+
+### 5.1 Wazuh Deployment
+
+Wazuh 4.14.7 was deployed as a virtual appliance and configured as the central SIEM/XDR platform for the lab.
+
+The Wazuh virtual machine was configured with:
+
+- 6 GB RAM
+- 2 virtual CPUs
+- Host-only networking
+- Static lab IP address: `192.168.32.130`
+
+The deployment provided the core components required for the monitoring environment:
+
+- Wazuh Manager
+- Wazuh Indexer
+- Wazuh Dashboard
+
+The Dashboard was accessed from the Kali Linux analyst workstation using HTTPS.
+
+### 5.2 Wazuh Indexer Memory Failure
+
+During deployment, the Wazuh Dashboard became unavailable. Initial symptoms appeared to indicate a Dashboard authentication problem; however, further investigation showed that the underlying Wazuh Indexer service was not running correctly.
+
+Service and kernel logs were examined to identify the root cause.
+
+The Linux kernel reported that the OpenSearch Java process had been terminated by the Out-of-Memory (OOM) killer.
+
+Additional investigation identified the following conditions:
+
+- Approximately 5.6 GiB of usable memory was available to the Wazuh VM.
+- The OpenSearch JVM was configured with approximately 2.9 GB of heap memory.
+- No swap space was configured.
+- Disk capacity was not the cause of the failure.
+
+This demonstrated that the apparent Dashboard problem was actually an underlying resource-availability issue affecting the Indexer.
+
+### 5.3 Persistent Swap Remediation
+
+To provide additional memory protection during periods of high memory pressure, a persistent 4 GiB swap file was created and enabled.
+
+The remediation included:
+
+```bash
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+Swap availability was verified using:
+
+```bash
+free -h
+swapon --show
+```
+
+The swap file was then added to `/etc/fstab` so that it would remain available after reboot.
+
+After remediation, the Wazuh Indexer was restarted and its availability was validated through service status, TCP port 9200, authenticated Indexer access, and successful Wazuh Dashboard login.
+
+### 5.4 Indexer Startup Timeout
+
+A separate reliability issue was later identified during VM startup. The Wazuh Indexer occasionally required longer than the default systemd startup timeout and was terminated before initialization completed.
+
+The configured startup timeout was found to be three minutes.
+
+A persistent systemd override was created to increase the Wazuh Indexer startup timeout to ten minutes:
+
+```ini
+[Service]
+TimeoutStartSec=10min
+```
+
+After reloading systemd and restarting the environment, the Indexer was allowed sufficient time to initialize and subsequently reached an active state.
+
+This change improved startup reliability on the resource-constrained lab host.
+
+### 5.5 Verification
+
+Platform health was validated by confirming that the three primary Wazuh services were active:
+
+```bash
+systemctl is-active wazuh-indexer wazuh-manager wazuh-dashboard
+```
+
+The final health check returned all three services as active.
+
+These troubleshooting steps reinforced the importance of investigating the complete SIEM pipeline rather than assuming that a visible Dashboard or authentication error originates at the user-interface layer.
