@@ -207,3 +207,54 @@ systemctl is-active wazuh-indexer wazuh-manager wazuh-dashboard
 The final health check returned all three services as active.
 
 These troubleshooting steps reinforced the importance of investigating the complete SIEM pipeline rather than assuming that a visible Dashboard or authentication error originates at the user-interface layer.
+
+
+---
+
+## 6. Windows Endpoint and Wazuh Agent Deployment
+
+### 6.1 Windows 11 Target
+
+A Windows 11 Pro virtual machine named `Windows-Target` was deployed as the monitored endpoint.
+
+The endpoint was configured on the isolated Host-only network with the following lab address:
+
+`192.168.32.131`
+
+The system served as the primary source of Windows Security, PowerShell, and Sysmon telemetry throughout the project.
+
+### 6.2 Wazuh Agent Installation
+
+Wazuh Agent 4.14.7 was installed on Windows-Target and configured to communicate with the Wazuh Manager at:
+
+`192.168.32.130`
+
+After installation, the Wazuh service was started and connectivity to the Manager was validated through the Wazuh Dashboard.
+
+The endpoint successfully registered with the following details:
+
+- Agent name: `Windows-Target`
+- Agent ID: `001`
+- IP address: `192.168.32.131`
+- Operating system: Windows 11 Pro
+- Agent version: Wazuh 4.14.7
+- Status: Active
+
+### 6.3 Agent Verification
+
+Successful registration demonstrated that the basic endpoint-to-SIEM communication path was operational:
+
+```text
+Windows-Target
+      |
+      | Wazuh Agent
+      v
+Wazuh Manager
+      |
+      v
+Indexer / Dashboard
+```
+
+The active-agent status in the Wazuh Dashboard was retained as evidence of successful endpoint integration.
+
+This established the telemetry pipeline required for the subsequent Windows Security monitoring, PowerShell logging, controlled detection scenarios, and SOC investigations.
