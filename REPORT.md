@@ -995,3 +995,68 @@ The failed-authentication investigation also reinforced the importance of eviden
 The project also provided practical experience troubleshooting infrastructure problems that can affect security monitoring, including memory exhaustion, service startup timing, API availability, network connectivity, EventChannel subscriptions, and SIEM indexing delays.
 
 Overall, the lab strengthened both technical SIEM troubleshooting skills and the analytical process required to determine what a security alert actually means.
+
+
+---
+
+## 15. Skills Demonstrated
+
+This project provided hands-on experience across SOC monitoring, SIEM administration, Windows telemetry, alert investigation, and infrastructure troubleshooting.
+
+### SOC and Security Monitoring
+
+- SIEM alert monitoring and validation
+- Windows Security event analysis
+- Authentication-event investigation
+- Event correlation and timeline analysis
+- Alert triage and analyst disposition
+- Differentiating benign activity from potentially suspicious behavior
+- Raw telemetry versus alert analysis
+
+### Wazuh / SIEM
+
+- Wazuh Manager, Indexer, and Dashboard operation
+- Windows Wazuh agent deployment and verification
+- EventChannel log collection
+- Wazuh rule analysis
+- Threat Hunting
+- Raw event archive analysis
+- Filebeat-to-Indexer troubleshooting
+- Wazuh service and API troubleshooting
+
+### Windows Security
+
+- Windows Security Event Log analysis
+- Event IDs 4624, 4625, 4672, 4688, 4720, and 4722
+- PowerShell Operational logging
+- PowerShell Script Block Logging
+- Sysmon installation and local telemetry validation
+- Windows authentication status and SubStatus interpretation
+
+### MITRE ATT&CK
+
+- Mapping detections to ATT&CK techniques
+- T1098 — Account Manipulation
+- T1059.001 — PowerShell
+- T1112 — Modify Registry
+- Interpretation of Wazuh's built-in T1531 mapping
+- Distinguishing ATT&CK mappings from analyst conclusions
+
+### Infrastructure and Troubleshooting
+
+- VMware-based isolated lab networking
+- Linux service troubleshooting with systemd
+- Linux memory and OOM analysis
+- OpenSearch/Wazuh Indexer troubleshooting
+- Persistent Linux swap configuration
+- systemd service timeout configuration
+- Network connectivity troubleshooting
+- SIEM data-pipeline troubleshooting
+
+### Documentation
+
+- Evidence-based technical reporting
+- Root-cause analysis documentation
+- Detection validation
+- Remediation and verification documentation
+- Git-based project documentation and version history
